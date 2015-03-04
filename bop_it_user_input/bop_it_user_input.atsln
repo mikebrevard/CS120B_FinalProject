@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# AvrStudio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "bop_it_user_input", "bop_it_user_input\bop_it_user_input.cproj", "{7A274A9B-B76D-4BB0-AA62-37A9799F42A3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|AVR = Debug|AVR
+		Release|AVR = Release|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7A274A9B-B76D-4BB0-AA62-37A9799F42A3}.Debug|AVR.ActiveCfg = Debug|AVR
+		{7A274A9B-B76D-4BB0-AA62-37A9799F42A3}.Debug|AVR.Build.0 = Debug|AVR
+		{7A274A9B-B76D-4BB0-AA62-37A9799F42A3}.Release|AVR.ActiveCfg = Release|AVR
+		{7A274A9B-B76D-4BB0-AA62-37A9799F42A3}.Release|AVR.Build.0 = Release|AVR
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
