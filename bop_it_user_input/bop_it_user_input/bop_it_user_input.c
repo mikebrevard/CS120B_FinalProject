@@ -10,10 +10,12 @@
 #include <avr/io.h>
 #include "usart_ATmega1284.h"
 #include "Utilities.h"
+#include "Codes.h"
+#include "io.h"
 
 int main(void) {
 	
-	DDRA = 0xFF; PORTA = 0x00;
+	DDRA = 0x00; PORTA = 0xFF;
 	DDRB = 0x00; PORTB = 0xFF;
 	//DDRC = 0xFF; PORTC = 0x00; 
 	DDRD = 0xFF; PORTD = 0x00; 
@@ -34,40 +36,36 @@ int main(void) {
 		button3 = GetBit(~PINB, 2);
 		button4 = GetBit(~PINB, 3);
 		button5 = GetBit(~PINB, 4);
-		spin_knob = GetBit(PINB, 5);
+		spin_knob = GetBit(PINA, 2);
 
 		if (button1 && USART_IsSendReady(0)) {
-			PORTA = 1;
-			PORTD = 0x00;
 			if (USART_IsSendReady(0)) {
-					USART_Send(0x01, 0);
+				USART_Send(CODE_BUTTON1, 0);
 			}
-		}		
-		if (button2 && USART_IsSendReady(0)) {
-			PORTA = 1;
-			PORTD = 0xFF;
+		} else if (button2 && USART_IsSendReady(0)) {
 			if (USART_IsSendReady(0)) {
-					USART_Send(0x02, 0);
+				USART_Send(CODE_BUTTON2, 0);
+			}
+		} else if (button3 && USART_IsSendReady(0)) {
+			if (USART_IsSendReady(0)) {
+				USART_Send(CODE_BUTTON3, 0);
+			}
+		} else if (button4 && USART_IsSendReady(0)) {
+			if (USART_IsSendReady(0)) {
+				USART_Send(CODE_BUTTON4, 0);
+			}
+		} else if (button5 && USART_IsSendReady(0)) {
+			if (USART_IsSendReady(0)) {
+				USART_Send(CODE_BUTTON5, 0);
+			}
+		} else if (spin_knob && USART_IsSendReady(0)) {
+			if (USART_IsSendReady(0)) {
+				USART_Send(CODE_SPINKNOB, 0);
+			}
+		} else if (USART_IsSendReady(0)) {
+			if (USART_IsSendReady(0)) {
+				USART_Send(CODE_NOTHING, 0);
 			}
 		}			
-		if (button3 && USART_IsSendReady(0)) {
-			PORTA = 1;
-			USART_Send(0x03, 0);
-		}		
-		if (button4 && USART_IsSendReady(0)) {
-			PORTA = 1;
-			USART_Send(0x04, 0);
-		}		
-		if (button5 && USART_IsSendReady(0)) {
-			PORTA = 1;
-			USART_Send(0x05, 0);
-		}	
-		if (spin_knob && USART_IsSendReady(0)) {
-			PORTA = 1;
-			USART_Send(0x06, 0);
-		}							
-		/*if (USART_HasTransmitted(0)) {
-			PORTA = 2;
-		}*/
     }
 }

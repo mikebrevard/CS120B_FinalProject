@@ -10,12 +10,11 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
+#include "Codes.h"
+#include "io.h"
 #include "usart_ATmega1284.h"
 #include "Utilities.h"
-#include "io.h"
-#include "Codes.h"
 
-//--------End find GCD function ---------------------------
 //--------Task scheduler data structure--------------------
 // Struct for Tasks represent a running process in our
 // simple real-time operating system.
@@ -33,21 +32,48 @@ typedef struct _task {
 
 //--------End Task scheduler data structure----------------
 //--------Shared Variables---------------------------------
+unsigned char const LENGTH_OF_LCD = 16;
 unsigned char array_position = 0;
-//unsigned char message[]= {'C','S','1','2','0','B',' ','i','s',' ','L','e','g','e','n','d','.','.','.',' ','w','a','i','t',' ','f','o','r',' ','i','t',' ','D','A','R','Y','!'};
-//unsigned char message[] = {'W','e','l','c','o','m','e',' ','t','o',' ','E','m','b','e','d','d','e','d',' ','B','o','p',' ','I','t','!'};
-unsigned char message[] = {'P', 'u', 's', 'h', ' ', 'i', 't','!',' '};
+unsigned char message[] = "Welcome to Embedded Bop it!";
 unsigned char display[16];
-unsigned char user_choice = 0x00;
+unsigned char user_choice = 0;
 //--------End Shared Variables-----------------------------
 
-//--------User defined FSMs--------------------------------
+unsigned char isMessageChanging() {
+	unsigned char temp[sizeof(message)];
+	if (user_choice == CODE_BUTTON1) {
+		strcpy(temp, "Button 1");
+	} else if (user_choice == CODE_BUTTON2) {
+		strcpy(temp, "Button 2");
+	} else if (user_choice == CODE_BUTTON3) {
+		strcpy(temp, "Button 3");
+	} else if (user_choice == CODE_BUTTON4) {
+		strcpy(temp, "Button 4");
+	} else if (user_choice == CODE_BUTTON5) {
+		strcpy(temp, "Button 5");
+	} else if (user_choice == CODE_NOTHING) {
+		strcpy(temp, "Nothing");
+	} else if (user_choice == CODE_SPINKNOB) {
+		strcpy(temp, "Spin Knob");
+	} else {
+		strcpy(temp, "Uncaught value");
+	}
+	
+	if (strcmp(temp,message) == 0) {
+		return 0;
+	} else {
+		memset(message,'\0',strlen(message));
+		strcpy(message, temp);
+		return 1;
+	}
+}
 
+
+//--------User defined FSMs--------------------------------
 enum SM1_States { SM1_start };
 // Monitors button connected to PA0. When the button is
 // pressed, shared variable "pause" is toggled.
 int SMTick1(int state) {
-	unsigned char const LENGTH_OF_LCD = 16;
 	unsigned char cursor_position = 1;
 	unsigned char counter = 0x00;
 	
@@ -63,19 +89,27 @@ int SMTick1(int state) {
 	//State machine actions
 	switch(state) {
 		case SM1_start: 
+			if (isMessageChanging()) {
+				array_position = 0;
+				//memset(display,0,strlen(display));
+			}
+		
 			for (counter = 0, cursor_position = array_position; counter < LENGTH_OF_LCD; cursor_position = cursor_position + 1, counter = counter + 1) {
-				if (cursor_position > sizeof(message)) {
-					cursor_position = 1;
+				if (cursor_position > strlen(message)) {
+					cursor_position = 0;
+					display[counter] = ' ';
+				} else if (cursor_position - 1 >= 0) {
+					display[counter] = message[cursor_position - 1]; 
 				}
-				if (cursor_position - 1 >= 0) { display[counter] = message[cursor_position - 1]; }
+				
 			}
 			
-			for (counter = 0, cursor_position = 1; counter < LENGTH_OF_LCD; cursor_position = cursor_position + 1, counter = counter + 1) {
+			for (counter = 0, cursor_position = 0; counter < LENGTH_OF_LCD; cursor_position = cursor_position + 1, counter = counter + 1) {
 				LCD_Cursor(cursor_position);
 				LCD_WriteData(display[counter]);
 			}	
 			array_position = array_position + 1;
-			if (array_position == (int) sizeof(message)) {
+			if (array_position == strlen(message)) {
 				array_position = 0;
 			}			
 			break;
@@ -162,7 +196,7 @@ int main() {
 	initUSART(1);
 	USART_Flush(1);
 	
-	while(1) {
+	while(1) {		
 		// Scheduler code
 		for ( i = 0; i < numTasks; i++ ) {
 			// Task is ready to tick

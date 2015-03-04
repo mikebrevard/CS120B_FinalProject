@@ -35,7 +35,8 @@ SUBDIRS :=
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS +=  \
-../bop_it_user_input.c
+../bop_it_user_input.c \
+../io.c
 
 
 PREPROCESSING_SRCS += 
@@ -45,19 +46,23 @@ ASM_SRCS +=
 
 
 OBJS +=  \
-bop_it_user_input.o
+bop_it_user_input.o \
+io.o
 
 
 OBJS_AS_ARGS +=  \
-bop_it_user_input.o
+bop_it_user_input.o \
+io.o
 
 
 C_DEPS +=  \
-bop_it_user_input.d
+bop_it_user_input.d \
+io.d
 
 
 C_DEPS_AS_ARGS +=  \
-bop_it_user_input.d
+bop_it_user_input.d \
+io.d
 
 
 OUTPUT_FILE_PATH +=bop_it_user_input.elf
@@ -69,6 +74,8 @@ ADDITIONAL_DEPENDENCIES:=
 OUTPUT_FILE_DEP:= ./makedep.mk
 
 # AVR32/GNU C Compiler
+
+
 
 
 
