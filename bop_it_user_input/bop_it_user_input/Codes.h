@@ -49,4 +49,15 @@ unsigned char const CODE_ANSWER_WRONG = 22;
 unsigned char const CODE_UNCAUGHT = 23;
 unsigned char const CODE_BLANK = 24;
 
+// display codes
+unsigned char const CODE_DISPLAY_WELCOME = 25;
+unsigned char const CODE_DISPLAY_PUSH_IT = 26;
+unsigned char const CODE_DISPLAY_TWIST_IT = 27;
+unsigned char const CODE_DISPLAY_COVER_IT = 28;
+unsigned char const CODE_DISPLAY_CORRECT = 29;
+unsigned char const CODE_DISPLAY_INCORRECT = 30;
+
+// device codes
+unsigned char const CODE_DEVICE_SEVEN_SEG = 31;
+
 #endif /* CODES_H_ */

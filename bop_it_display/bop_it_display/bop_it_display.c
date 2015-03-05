@@ -36,28 +36,25 @@ unsigned char const LENGTH_OF_LCD = 16;
 unsigned char array_position = 0;
 unsigned char message[] = "Welcome to Embedded Bop it!";
 unsigned char display[16];
-unsigned char user_choice = 0;
+unsigned char lcd_choice = 0x00;
+unsigned char sevendeg_choice = 0x00;
 //--------End Shared Variables-----------------------------
 
 unsigned char isMessageChanging() {
 	unsigned char temp[sizeof(message)];
-	if (user_choice == CODE_BUTTON1) {
-		strcpy(temp, "Button 1");
-	} else if (user_choice == CODE_BUTTON2) {
-		strcpy(temp, "Button 2");
-	} else if (user_choice == CODE_BUTTON3) {
-		strcpy(temp, "Button 3");
-	} else if (user_choice == CODE_BUTTON4) {
-		strcpy(temp, "Button 4");
-	} else if (user_choice == CODE_BUTTON5) {
-		strcpy(temp, "Button 5");
-	} else if (user_choice == CODE_NOTHING) {
-		strcpy(temp, "Nothing");
-	} else if (user_choice == CODE_SPINKNOB) {
-		strcpy(temp, "Spin Knob");
-	} else {
-		strcpy(temp, "Uncaught value");
-	}
+	if (lcd_choice == CODE_DISPLAY_WELCOME) {
+		strcpy(temp, "Welcome to Embedded Bop it!");
+	} else if (lcd_choice == CODE_DISPLAY_PUSH_IT) {
+		strcpy(temp, "Push it!");
+	} else if (lcd_choice == CODE_DISPLAY_TWIST_IT) {
+		strcpy(temp, "Twist it!");
+	} else if (lcd_choice == CODE_DISPLAY_COVER_IT) {
+		strcpy(temp, "Cover it!");
+	} else if (lcd_choice == CODE_DISPLAY_CORRECT) {
+		strcpy(temp, "Correct!");
+	} else if (lcd_choice == CODE_DISPLAY_CORRECT) {
+		strcpy(temp, "Incorrect! Play Again?");
+	} 
 	
 	if (strcmp(temp,message) == 0) {
 		return 0;
@@ -88,12 +85,7 @@ int SMTick1(int state) {
 	}
 	//State machine actions
 	switch(state) {
-		case SM1_start: 
-			if (isMessageChanging()) {
-				array_position = 0;
-				//memset(display,0,strlen(display));
-			}
-		
+		case SM1_start: 		
 			for (counter = 0, cursor_position = array_position; counter < LENGTH_OF_LCD; cursor_position = cursor_position + 1, counter = counter + 1) {
 				if (cursor_position > strlen(message)) {
 					cursor_position = 0;
@@ -123,6 +115,7 @@ int SMTick1(int state) {
 */
 enum SM2_States { SM2_start };
 int SMTick2(int state) {
+	unsigned char receive = 0x00;
 	
 	//State machine transitions
 	switch (state) {
@@ -137,8 +130,85 @@ int SMTick2(int state) {
 	switch(state) {
 		case SM2_start: 
 			if (USART_HasReceived(1)) {
-				user_choice = USART_Receive(1);
+				receive = USART_Receive(1);
+				
+				//if 0 than message for LCD, 1 for 7 seg display
+				if (!GetBit(receive, 7)) {
+				//	lcd_choice = receive;
+				//	if (isMessageChanging()) {
+				//		array_position = 0;
+				//	}
+				} else {
+					sevendeg_choice = receive & 0x7F;
+				}					
 			} 
+			break;
+		default: break;
+	}
+	return state;
+}
+
+/**
+* get received message and show on seven seg display
+*/
+enum SM3_States { SM3_start };
+int SMTick3(int state) {
+	unsigned char const NUMBER_0 = 0x18;
+	unsigned char const NUMBER_1 = 0x7B;
+	unsigned char const NUMBER_2 = 0x2C;
+	unsigned char const NUMBER_3 = 0x29;
+	unsigned char const NUMBER_4 = 0x4B;
+	unsigned char const NUMBER_5 = 0x89;
+	unsigned char const NUMBER_6 = 0x88;
+	unsigned char const NUMBER_7 = 0x3B;
+	unsigned char const NUMBER_8 = 0x00;
+	unsigned char const NUMBER_9 = 0x0B;
+	unsigned char const NUMBER_A = 0x0A;
+	unsigned char const NUMBER_C = 0x9C;
+	unsigned char const NUMBER_E = 0x8C;
+	unsigned char const NUMBER_BLANK = 0xFF;
+	
+	//State machine transitions
+	switch (state) {
+		case SM3_start:
+			state = SM3_start;
+			break;
+		default:
+			state = SM3_start;
+			break;
+	}
+	//State machine actions
+	switch(state) {
+		case SM3_start: 
+			if (sevendeg_choice == 0)  {
+				PORTA = NUMBER_0;
+			} else if (sevendeg_choice == 0x01)  {
+				PORTA = NUMBER_1;
+			} else if (sevendeg_choice == 0x02)  {
+				PORTA = NUMBER_2;
+			} else if (sevendeg_choice == 0x03)  {
+				PORTA = NUMBER_3;
+			} else if (sevendeg_choice == 0x04)  {
+				PORTA = NUMBER_4;
+			} else if (sevendeg_choice == 0x05)  {
+				PORTA = NUMBER_5;
+			} else if (sevendeg_choice == 0x06)  {
+				PORTA = NUMBER_6;
+			} else if (sevendeg_choice == 0x07)  {
+				PORTA = NUMBER_7;
+			} else if (sevendeg_choice == 0x08)  {
+				PORTA = NUMBER_8;
+			} else if (sevendeg_choice == 0x09)  {
+				PORTA = NUMBER_9;
+			} else if (sevendeg_choice == 0x0A)  {
+				PORTA = NUMBER_A;
+			} else if (sevendeg_choice == 0x0C)  {
+				PORTA = NUMBER_C;
+			} else if (sevendeg_choice == 0x0E)  {
+				PORTA = NUMBER_E;
+			} else {
+				PORTA = NUMBER_BLANK;
+			}
 			break;
 		default: break;
 	}
@@ -150,7 +220,7 @@ int main() {
 	// Set Data Direction Registers
 	// Buttons PORTA[0-7], set AVR PORTA
 	// to pull down logic
-	DDRA = 0x00; PORTA = 0xFF;
+	DDRA = 0xFF; PORTA = 0x00;
 	DDRB = 0xFF; PORTB = 0x00;
 	DDRC = 0xFF; PORTC = 0x00; // LCD data lines
 	DDRD = 0xFF; PORTD = 0x00; // LCD control lines
@@ -158,10 +228,12 @@ int main() {
 	// Period for the tasks
 	unsigned long int SMTick1_calc = 500;
 	unsigned long int SMTick2_calc = 1;
+	unsigned long int SMTick3_calc = 1;
 	
 	//Calculating GCD
 	unsigned long int tmpGCD = 1;
 	tmpGCD = findGCD(SMTick1_calc, SMTick2_calc);
+	tmpGCD = findGCD(tmpGCD, SMTick3_calc);
 	
 	//Greatest common divisor for all tasks
 	// or smallest time unit for tasks.
@@ -170,10 +242,11 @@ int main() {
 	//Recalculate GCD periods for scheduler
 	unsigned long int SMTick1_period = SMTick1_calc/GCD;
 	unsigned long int SMTick2_period = SMTick2_calc/GCD;
+	unsigned long int SMTick3_period = SMTick3_calc/GCD;
 
 	//Declare an array of tasks
-	static task task1, task2;
-	task *tasks[] = { &task1 , &task2 };
+	static task task1, task2, task3;
+	task *tasks[] = { &task1 , &task2, &task3 };
 	const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
 	// Task 1
 	task1.state = -1;
@@ -185,6 +258,11 @@ int main() {
 	task2.period = SMTick2_period;
 	task2.elapsedTime = SMTick2_period;
 	task2.TickFct = &SMTick2;
+	// Task 3
+	task3.state = -1;
+	task3.period = SMTick3_period;
+	task3.elapsedTime = SMTick3_period;
+	task3.TickFct = &SMTick3;
 	// Set the timer and turn it on
 	TimerSet(GCD);
 	TimerOn();
@@ -195,6 +273,10 @@ int main() {
 	
 	initUSART(1);
 	USART_Flush(1);
+	
+	//start with welcome
+	sevendeg_choice = 0xFF;
+	lcd_choice = CODE_DISPLAY_WELCOME;
 	
 	while(1) {		
 		// Scheduler code
