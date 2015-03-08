@@ -168,7 +168,7 @@ int SMTick3(int state) {
 			if (button1) {
 				LED_buttons = 0x08; //all blue
 			} else if (button2) {
-				LED_buttons = 0x02; //all green
+				LED_buttons = 0x02; //all green 0x02
 			} else if (button3) {
 				LED_buttons = 0x09; //purple (red + blue)
 			} else if (button4) {
@@ -256,12 +256,15 @@ int SMTick5(int state) {
 			//game play
 			if (game_state == CODE_IN_GAME_PLAY) {
 				if (game_selection == CODE_NOTHING) { //choice game piece
-					//decide 1 through 5
+					//decide 1 through 16
 					game_selection = rand() % 16 + 1;
 					
-					//TODO: make game_counter fluctuate based on correct right responses
-					game_counter = 0x09;
-				
+					if (9 - (game_score / 3) > 1) {
+						game_counter = 9 - (game_score / 3);					
+					} else {
+						game_counter = 1;
+					}
+					
 				} else if (game_counter > 0) { //    if answer has been chosen (right or wrong)
 					if (button1) {
 						game_state = (game_selection == CODE_BUTTON1) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
