@@ -114,7 +114,7 @@ int SMTick1(int state) {
 				} else if (keypad_temp == '5') {
 					keypad_value = 0x09;
 				} else {
-					keypad_value = 0x0A;
+					keypad_value = 0x0F;
 				}
 			} else {
 				keypad_value = 0x0B;
@@ -178,9 +178,9 @@ int SMTick3(int state) {
 			} else if (spin_knob) {
 				LED_spin_knob = 0x01;
 			} else if (keypad_value != 0x0B) {
-				if (keypad_value == 0x0A) { //error key (something other than 0-9)
+				if (keypad_value == 0x0F) { //error key (something other than 0-9)
 					//TODO: change A to F for fail!
-					sendMessage(CODE_DEVICE_SEVENSEG, 0x0A);
+					sendMessage(CODE_DEVICE_SEVENSEG, 0x0F);
 				} else {
 					if (keypad_value == 0x00) {
 						sendMessage(CODE_DEVICE_SEVENSEG, 0x00);
@@ -231,13 +231,7 @@ int SMTick4(int state) {
 		case SM4_start: 	
 			if (game_counter > 0) {
 				game_counter = game_counter - 1;
-				//set display to DP if not applicable
-				/*if (game_counter != 0)
-					sendMessage(CODE_DEVICE_SEVENSEG, game_counter);
-				else 
-					sendMessage(CODE_DEVICE_SEVENSEG, 0x0B); //set to DP
-					*/
-			}
+			} 
 			break;
 		default: break;
 	}
@@ -261,63 +255,89 @@ int SMTick5(int state) {
 		case SM5_start: 		
 			//game play
 			if (game_state == CODE_IN_GAME_PLAY) {
-				
 				if (game_selection == CODE_NOTHING) { //choice game piece
 					//decide 1 through 5
-					//TODO: add in keypad and spin knob
-					game_selection = rand() % 5 + 1;
+					game_selection = rand() % 16 + 1;
+					
+					//TODO: make game_counter fluctuate based on correct right responses
 					game_counter = 0x09;
 				
-				} else if (game_counter > 0) { //    if answer has been chosen
+				} else if (game_counter > 0) { //    if answer has been chosen (right or wrong)
 					if (button1) {
 						game_state = (game_selection == CODE_BUTTON1) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
-						game_counter = 0x09;
-						game_selection = CODE_NOTHING;
 					} else if (button2) {
 						game_state = (game_selection == CODE_BUTTON2) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
-						game_counter = 0x09;
-						game_selection = CODE_NOTHING;
 					} else if (button3) { 
 						game_state = (game_selection == CODE_BUTTON3) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
-						game_counter = 0x09;
-						game_selection = CODE_NOTHING;
 					} else if (button4) {
 						game_state = (game_selection == CODE_BUTTON4) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
-						game_counter = 0x09;
-						game_selection = CODE_NOTHING;
 					} else if (button5) {
 						game_state = (game_selection == CODE_BUTTON5) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
-						game_counter = 0x09;
+					} else if (spin_knob) {
+						game_state = (game_selection == CODE_SPINKNOB) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+					} else if (keypad_value == 0x00) {
+						game_state = (game_selection == CODE_KEYPAD0) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+					} else if (keypad_value == 0x01) {
+						game_state = (game_selection == CODE_KEYPAD1) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+					} else if (keypad_value == 0x02) {
+						game_state = (game_selection == CODE_KEYPAD2) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+					} else if (keypad_value == 0x03) {
+						game_state = (game_selection == CODE_KEYPAD3) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+					} else if (keypad_value == 0x04) {
+						game_state = (game_selection == CODE_KEYPAD4) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+					} else if (keypad_value == 0x05) {
+						game_state = (game_selection == CODE_KEYPAD5) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+					} else if (keypad_value == 0x06) {
+						game_state = (game_selection == CODE_KEYPAD6) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+					} else if (keypad_value == 0x07) {
+						game_state = (game_selection == CODE_KEYPAD7) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+					} else if (keypad_value == 0x08) {
+						game_state = (game_selection == CODE_KEYPAD8) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+					} else if (keypad_value == 0x09) {
+						game_state = (game_selection == CODE_KEYPAD9) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+					} 	
+					
+					//something was select (correct or incorrect)
+					if (game_state != CODE_IN_GAME_PLAY) {
+						game_counter = 0x02;
 						game_selection = CODE_NOTHING;
-					}		
+					}
 					
 				} else { //time ran out
 					game_state = CODE_DISPLAY_INCORRECT;
 					game_selection = CODE_NOTHING;
 				}
+				
+				//add to their score
+				if (game_state == CODE_DISPLAY_CORRECT) {
+					game_score = game_score + 1;
+				}
 			} else if (game_state == CODE_DISPLAY_WELCOME || game_state == CODE_DISPLAY_INCORRECT) {
 				game_selection = CODE_NOTHING;
+				game_score = 0x00;
 				if (button2) { //green button
 					game_state = CODE_DISPLAY_GAME_STARTING;
-					game_counter = 0x09;
+					game_counter = 0x05;
 					
 					//send message first time but rest is taken care of state machine 4
-					// sendMessage(CODE_DEVICE_SEVENSEG, game_counter);
+					sendMessage(CODE_DEVICE_GAME_COUNTER, game_counter);
 				}
 			} else if (game_state == CODE_DISPLAY_GAME_STARTING || game_state == CODE_DISPLAY_CORRECT) {
 				game_selection = CODE_NOTHING;
 				if (game_counter == 0) {
 					game_state = CODE_IN_GAME_PLAY;
-				}
+				} else {
+					sendMessage(CODE_DEVICE_GAME_COUNTER, game_counter);
+				} 
 			} 
 			
 			//send message
 			if (game_state == CODE_IN_GAME_PLAY) {
+				sendMessage(CODE_DEVICE_GAME_COUNTER, game_score);
 				sendMessage(CODE_DEVICE_GAME_PIECE, game_selection);
 			} else {
 				sendMessage(CODE_DEVICE_LCD, game_state);
 			}
-			
 			
 			break;
 		default: break;

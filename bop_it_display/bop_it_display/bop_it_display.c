@@ -41,6 +41,8 @@ unsigned char lcd_choice = 0x00;
 unsigned char bottom_lcd_choice = 0x00;
 unsigned char sevendeg_choice = 0x00;
 unsigned char game_counter = 0x00;
+unsigned char first_digit = '0';
+unsigned char second_digit = '0';
 //--------End Shared Variables-----------------------------
 
 unsigned char isMessageChanging() {
@@ -92,16 +94,93 @@ void setBottomMessage() {
 		strcpy(bottom_temp, "Silver Button");
 	} else if (bottom_lcd_choice == CODE_BUTTON5) {
 		strcpy(bottom_temp, "Red Button");
+	} else if (bottom_lcd_choice == CODE_SPINKNOB) {
+		strcpy(bottom_temp, "Spin Knob");
+	} else if (bottom_lcd_choice == CODE_KEYPAD0) {
+		strcpy(bottom_temp, "Keypad 0");
+	} else if (bottom_lcd_choice == CODE_KEYPAD1) {
+		strcpy(bottom_temp, "Keypad 1");
+	} else if (bottom_lcd_choice == CODE_KEYPAD2) {
+		strcpy(bottom_temp, "Keypad 2");
+	} else if (bottom_lcd_choice == CODE_KEYPAD3) {
+		strcpy(bottom_temp, "Keypad 3");
+	} else if (bottom_lcd_choice == CODE_KEYPAD4) {
+		strcpy(bottom_temp, "Keypad 4");
+	} else if (bottom_lcd_choice == CODE_KEYPAD5) {
+		strcpy(bottom_temp, "Keypad 5");
+	} else if (bottom_lcd_choice == CODE_KEYPAD6) {
+		strcpy(bottom_temp, "Keypad 6");
+	} else if (bottom_lcd_choice == CODE_KEYPAD7) {
+		strcpy(bottom_temp, "Keypad 7");
+	} else if (bottom_lcd_choice == CODE_KEYPAD8) {
+		strcpy(bottom_temp, "Keypad 8");
+	} else if (bottom_lcd_choice == CODE_KEYPAD9) {
+		strcpy(bottom_temp, "Keypad 9");
 	} else if (bottom_lcd_choice == CODE_DISPLAY_CORRECT) {
 		strcpy(bottom_temp, "Good Job!");
 	} else if (bottom_lcd_choice == CODE_DISPLAY_INCORRECT) {
-		strcpy(bottom_temp, "Retry -> Green");
+		strcpy(bottom_temp, "Final Score");
 	}
 	
 	//update bottom message
 	memset(bottom_message,'\0',strlen(bottom_message));
 	strcpy(bottom_message, bottom_temp);
-		
+}
+
+unsigned char showScore() {
+	unsigned f = 0x00;
+	unsigned s = 0x00;
+
+	//f is 1's value
+	//s is the 10's value
+	f = game_counter % 10;
+	s = game_counter / 10;
+
+	if (f == 0x00) {
+		first_digit = '0';
+	} else if (f == 0x01) {
+		first_digit = '1';
+	} else if (f == 0x02) {
+		first_digit = '2';
+	} else if (f == 0x03) {
+		first_digit = '3';
+	} else if (f == 0x04) {
+		first_digit = '4';
+	} else if (f == 0x05) {
+		first_digit = '5';
+	} else if (f == 0x06) {
+		first_digit = '6';
+	} else if (f == 0x07) {
+		first_digit = '7';
+	} else if (f == 0x08) {
+		first_digit = '8';
+	} else if (f == 0x09) {
+		first_digit = '9';
+	} 
+	
+	if (s == 0x00) {
+		second_digit = '0';
+	} else if (s == 0x01) {
+		second_digit = '1';
+	} else if (s == 0x02) {
+		second_digit = '2';
+	} else if (s == 0x03) {
+		second_digit = '3';
+	} else if (s == 0x04) {
+		second_digit = '4';
+	} else if (s == 0x05) {
+		second_digit = '5';
+	} else if (s == 0x06) {
+		second_digit = '6';
+	} else if (s == 0x07) {
+		second_digit = '7';
+	} else if (s == 0x08) {
+		second_digit = '8';
+	} else if (s == 0x09) {
+		second_digit = '9';
+	} 
+	
+	return (game_counter != 0 && lcd_choice != CODE_DISPLAY_WELCOME && lcd_choice != CODE_DISPLAY_CORRECT) ? 1 : 0;
 }
 
 //--------User defined FSMs--------------------------------
@@ -154,6 +233,15 @@ int SMTick1(int state) {
 					LCD_WriteData(' ');
 				}
 			}
+			
+			//display score
+			if (showScore()) {
+				LCD_Cursor(31);
+				LCD_WriteData(second_digit);
+				LCD_Cursor(32);
+				LCD_WriteData(first_digit);
+			}
+						
 			break;
 		default: break;
 	}
@@ -186,11 +274,14 @@ int SMTick2(int state) {
 				receive = receive & 0x3F;
 				
 				if (device == CODE_DEVICE_GAME_PIECE) {
-					if (receive > 0x01 & receive <= 0x05) {
+					if ((receive >= CODE_BUTTON1 & receive <= CODE_BUTTON5) || (receive >= CODE_KEYPAD0 & receive <= CODE_KEYPAD9)) {
 						lcd_choice = CODE_DISPLAY_PUSH_IT;
-						if (isMessageChanging()) {
-							array_position = 0;
-						}
+					} else if (receive == CODE_SPINKNOB) {
+						lcd_choice = CODE_DISPLAY_TWIST_IT;
+					}
+					
+					if (isMessageChanging()) {
+						array_position = 0;
 					}
 					bottom_lcd_choice = receive;
 					
@@ -230,6 +321,7 @@ int SMTick3(int state) {
 	unsigned char const NUMBER_A = 0x0A;
 	unsigned char const NUMBER_C = 0x9C;
 	unsigned char const NUMBER_E = 0x8C;
+	unsigned char const NUMBER_F = 0x8A;
 	unsigned char const NUMBER_DP = 0xF7;
 	
 	//State machine transitions
@@ -270,6 +362,8 @@ int SMTick3(int state) {
 				PORTA = NUMBER_C;
 			} else if (sevendeg_choice == 0x0E)  {
 				PORTA = NUMBER_E;
+			} else if (sevendeg_choice == 0x0F)  {
+				PORTA = NUMBER_F;
 			} else {
 				PORTA = NUMBER_DP;
 			}
@@ -292,7 +386,7 @@ int main() {
 	// Period for the tasks
 	unsigned long int SMTick1_calc = 500;
 	unsigned long int SMTick2_calc = 1;
-	unsigned long int SMTick3_calc = 1;
+	unsigned long int SMTick3_calc = 10;
 	
 	//Calculating GCD
 	unsigned long int tmpGCD = 1;
