@@ -13,6 +13,54 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
+// Bit-access functions
+unsigned char SetBit(unsigned char x, unsigned char k, unsigned char b) {
+	return (b ? x | (0x01 << k) : x & ~(0x01 << k));
+}
+unsigned char GetBit(unsigned char x, unsigned char k) {
+	return ((x & (0x01 << k)) != 0);
+}
+
+unsigned char GetKeypadKey() {
+	// Check keys in col 1
+	// Enable col 4 with 0, disable others with 1’s
+	// The delay allows PORTC to stabilize before checking
+	PORTC = 0xEF;
+	asm("nop");
+	if (GetBit(PINC,0)==0) { return('1'); }
+	if (GetBit(PINC,1)==0) { return('4'); }
+	if (GetBit(PINC,2)==0) { return('7'); }
+	if (GetBit(PINC,3)==0) { return('*'); }
+	// Check keys in col 2
+	// Enable col 5 with 0, disable others with 1’s
+	// The delay allows PORTC to stabilize before checking
+	PORTC = 0xDF;
+	asm("nop");
+	if (GetBit(PINC,0)==0) { return('2'); }
+	if (GetBit(PINC,1)==0) { return('5'); }
+	if (GetBit(PINC,2)==0) { return('8'); }
+	if (GetBit(PINC,3)==0) { return('0'); }
+	// ... *****FINISH*****
+	// Check keys in col 3
+	// Enable col 6 with 0, disable others with 1’s
+	// The delay allows PORTC to stabilize before checking
+	PORTC = 0xBF;
+	asm("nop");
+	if (GetBit(PINC,0)==0) { return('3'); }
+	if (GetBit(PINC,1)==0) { return('6'); }
+	if (GetBit(PINC,2)==0) { return('9'); }
+	if (GetBit(PINC,3)==0) { return('#'); }
+		
+	PORTC = 0x7F;
+	asm("nop");
+	if (GetBit(PINC,0)==0) { return('A'); }
+	if (GetBit(PINC,1)==0) { return('B'); }
+	if (GetBit(PINC,2)==0) { return('C'); }
+	if (GetBit(PINC,3)==0) { return('D'); }
+	// ... *****FINISH*****
+	return('\0'); // default value
+}
+
 //--------Find GCD function -------------------------------
 unsigned long int findGCD (unsigned long int a, unsigned long int b)
 {
@@ -74,14 +122,6 @@ void PWM_on() {
 void PWM_off() {
 	TCCR3A = 0x00;
 	TCCR3B = 0x00;
-}
-
-// Bit-access functions
-unsigned char SetBit(unsigned char x, unsigned char k, unsigned char b) {
-	return (b ? x | (0x01 << k) : x & ~(0x01 << k));
-}
-unsigned char GetBit(unsigned char x, unsigned char k) {
-	return ((x & (0x01 << k)) != 0);
 }
 
 // TimerISR() sets this to 1. C programmer should clear to 0.

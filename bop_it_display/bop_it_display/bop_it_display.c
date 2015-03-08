@@ -161,12 +161,12 @@ int SMTick3(int state) {
 	unsigned char const NUMBER_5 = 0x89;
 	unsigned char const NUMBER_6 = 0x88;
 	unsigned char const NUMBER_7 = 0x3B;
-	unsigned char const NUMBER_8 = 0x00;
+	unsigned char const NUMBER_8 = 0x08;
 	unsigned char const NUMBER_9 = 0x0B;
 	unsigned char const NUMBER_A = 0x0A;
 	unsigned char const NUMBER_C = 0x9C;
 	unsigned char const NUMBER_E = 0x8C;
-	unsigned char const NUMBER_BLANK = 0xFF;
+	unsigned char const NUMBER_DP = 0xF7;
 	
 	//State machine transitions
 	switch (state) {
@@ -207,7 +207,7 @@ int SMTick3(int state) {
 			} else if (sevendeg_choice == 0x0E)  {
 				PORTA = NUMBER_E;
 			} else {
-				PORTA = NUMBER_BLANK;
+				PORTA = NUMBER_DP;
 			}
 			break;
 		default: break;
