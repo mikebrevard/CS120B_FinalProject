@@ -21,20 +21,20 @@ unsigned char const CODE_BUTTON5 = 5;
 // spin knob
 unsigned char const CODE_SPINKNOB = 6; 
 
-// light sensor
-unsigned char const CODE_LIGHTSENSOR = 7; 
-
 // keypad
-unsigned char const CODE_KEYPAD0 = 8;
-unsigned char const CODE_KEYPAD1 = 9;
-unsigned char const CODE_KEYPAD2 = 10;
-unsigned char const CODE_KEYPAD3 = 11;
-unsigned char const CODE_KEYPAD4 = 12;
-unsigned char const CODE_KEYPAD5 = 13;
-unsigned char const CODE_KEYPAD6 = 14;
-unsigned char const CODE_KEYPAD7 = 15;
-unsigned char const CODE_KEYPAD8 = 16;
-unsigned char const CODE_KEYPAD9 = 17;
+unsigned char const CODE_KEYPAD0 = 7;
+unsigned char const CODE_KEYPAD1 = 8;
+unsigned char const CODE_KEYPAD2 = 9;
+unsigned char const CODE_KEYPAD3 = 10;
+unsigned char const CODE_KEYPAD4 = 11;
+unsigned char const CODE_KEYPAD5 = 12;
+unsigned char const CODE_KEYPAD6 = 13;
+unsigned char const CODE_KEYPAD7 = 14;
+unsigned char const CODE_KEYPAD8 = 15;
+unsigned char const CODE_KEYPAD9 = 16;
+
+// light sensor
+unsigned char const CODE_LIGHTSENSOR = 17; 
 
 // game states
 unsigned char const CODE_GAME_WELCOME = 18;
@@ -51,10 +51,18 @@ unsigned char const CODE_BLANK = 24;
 
 // display codes
 unsigned char const CODE_DISPLAY_WELCOME = 25;
-unsigned char const CODE_DISPLAY_PUSH_IT = 26;
-unsigned char const CODE_DISPLAY_TWIST_IT = 27;
-unsigned char const CODE_DISPLAY_COVER_IT = 28;
-unsigned char const CODE_DISPLAY_CORRECT = 29;
-unsigned char const CODE_DISPLAY_INCORRECT = 30;
+unsigned char const CODE_DISPLAY_GAME_STARTING = 26;
+unsigned char const CODE_IN_GAME_PLAY = 27;
+unsigned char const CODE_DISPLAY_PUSH_IT = 27;
+unsigned char const CODE_DISPLAY_TWIST_IT = 28;
+unsigned char const CODE_DISPLAY_COVER_IT = 29;
+unsigned char const CODE_DISPLAY_CORRECT = 30;
+unsigned char const CODE_DISPLAY_INCORRECT = 31;
+
+//devices
+unsigned char const CODE_DEVICE_GAME_PIECE = 0x00;
+unsigned char const CODE_DEVICE_LCD = 0x40;
+unsigned char const CODE_DEVICE_SEVENSEG = 0x80;
+unsigned char const CODE_DEVICE_GAME_COUNTER = 0xC0;
 
 #endif /* CODES_H_ */

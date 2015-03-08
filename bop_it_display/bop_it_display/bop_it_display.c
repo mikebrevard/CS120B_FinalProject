@@ -35,15 +35,20 @@ typedef struct _task {
 unsigned char const LENGTH_OF_LCD = 16;
 unsigned char array_position = 0;
 unsigned char message[] = "Welcome to Embedded Bop it!";
+unsigned char bottom_message[] = "Start -> Green";
 unsigned char display[16];
 unsigned char lcd_choice = 0x00;
+unsigned char bottom_lcd_choice = 0x00;
 unsigned char sevendeg_choice = 0x00;
+unsigned char game_counter = 0x00;
 //--------End Shared Variables-----------------------------
 
 unsigned char isMessageChanging() {
 	unsigned char temp[sizeof(message)];
 	if (lcd_choice == CODE_DISPLAY_WELCOME) {
 		strcpy(temp, "Welcome to Embedded Bop it!");
+	} else if (lcd_choice == CODE_DISPLAY_GAME_STARTING) {
+		strcpy(temp, "Let go of all input");
 	} else if (lcd_choice == CODE_DISPLAY_PUSH_IT) {
 		strcpy(temp, "Push it!");
 	} else if (lcd_choice == CODE_DISPLAY_TWIST_IT) {
@@ -52,19 +57,52 @@ unsigned char isMessageChanging() {
 		strcpy(temp, "Cover it!");
 	} else if (lcd_choice == CODE_DISPLAY_CORRECT) {
 		strcpy(temp, "Correct!");
-	} else if (lcd_choice == CODE_DISPLAY_CORRECT) {
+	} else if (lcd_choice == CODE_DISPLAY_INCORRECT) {
 		strcpy(temp, "Incorrect! Play Again?");
 	} 
+
 	
 	if (strcmp(temp,message) == 0) {
+		// return that there is NO change
 		return 0;
-	} else {
-		memset(message,'\0',strlen(message));
-		strcpy(message, temp);
-		return 1;
-	}
+	}	
+	
+	//update top message
+	memset(message,'\0',strlen(message));
+	strcpy(message, temp);
+		
+	//return that there is a change
+	return 1;
 }
 
+void setBottomMessage() {
+	unsigned char bottom_temp[sizeof(bottom_message)];
+	
+	if (bottom_lcd_choice == CODE_DISPLAY_WELCOME) {
+		strcpy(bottom_temp, "Start -> Green");
+	} else if (bottom_lcd_choice == CODE_DISPLAY_GAME_STARTING) {
+		strcpy(bottom_temp, "Starting in ");
+	} else if (bottom_lcd_choice == CODE_BUTTON1) {
+		strcpy(bottom_temp, "Blue Button");
+	} else if (bottom_lcd_choice == CODE_BUTTON2) {
+		strcpy(bottom_temp, "Green Button");
+	} else if (bottom_lcd_choice == CODE_BUTTON3) {
+		strcpy(bottom_temp, "Purple Button");
+	} else if (bottom_lcd_choice == CODE_BUTTON4) {
+		strcpy(bottom_temp, "Silver Button");
+	} else if (bottom_lcd_choice == CODE_BUTTON5) {
+		strcpy(bottom_temp, "Red Button");
+	} else if (bottom_lcd_choice == CODE_DISPLAY_CORRECT) {
+		strcpy(bottom_temp, "Good Job!");
+	} else if (bottom_lcd_choice == CODE_DISPLAY_INCORRECT) {
+		strcpy(bottom_temp, "Retry -> Green");
+	}
+	
+	//update bottom message
+	memset(bottom_message,'\0',strlen(bottom_message));
+	strcpy(bottom_message, bottom_temp);
+		
+}
 
 //--------User defined FSMs--------------------------------
 enum SM1_States { SM1_start };
@@ -104,6 +142,18 @@ int SMTick1(int state) {
 			if (array_position == strlen(message)) {
 				array_position = 0;
 			}			
+			
+			// bottom message display
+			setBottomMessage();
+			for (counter = 0, cursor_position = LENGTH_OF_LCD + 1; counter < LENGTH_OF_LCD * 2; cursor_position = cursor_position + 1, counter = counter + 1) {
+				if (counter < strlen((bottom_message))) {
+					LCD_Cursor(cursor_position);
+					LCD_WriteData(bottom_message[counter]);
+				} else {
+					LCD_Cursor(cursor_position);
+					LCD_WriteData(' ');
+				}
+			}
 			break;
 		default: break;
 	}
@@ -116,6 +166,7 @@ int SMTick1(int state) {
 enum SM2_States { SM2_start };
 int SMTick2(int state) {
 	unsigned char receive = 0x00;
+	unsigned char device = 0x00;
 	
 	//State machine transitions
 	switch (state) {
@@ -131,16 +182,29 @@ int SMTick2(int state) {
 		case SM2_start: 
 			if (USART_HasReceived(1)) {
 				receive = USART_Receive(1);
+				device = receive & 0xC0;
+				receive = receive & 0x3F;
 				
-				//if 0 than message for LCD, 1 for 7 seg display
-				if (!GetBit(receive, 7)) {
-				//	lcd_choice = receive;
-				//	if (isMessageChanging()) {
-				//		array_position = 0;
-				//	}
-				} else {
-					sevendeg_choice = receive & 0x7F;
-				}					
+				if (device == CODE_DEVICE_GAME_PIECE) {
+					if (receive > 0x01 & receive <= 0x05) {
+						lcd_choice = CODE_DISPLAY_PUSH_IT;
+						if (isMessageChanging()) {
+							array_position = 0;
+						}
+					}
+					bottom_lcd_choice = receive;
+					
+				} else if (device == CODE_DEVICE_LCD) {
+					lcd_choice = receive;
+					bottom_lcd_choice = receive;
+					if (isMessageChanging()) {
+						array_position = 0;
+					}
+				} else if (device == CODE_DEVICE_SEVENSEG) {
+					sevendeg_choice = receive;
+				} else if (device == CODE_DEVICE_GAME_COUNTER) {
+					game_counter = receive;
+				}			
 			} 
 			break;
 		default: break;

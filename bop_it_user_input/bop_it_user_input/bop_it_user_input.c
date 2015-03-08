@@ -32,7 +32,8 @@ typedef struct _task {
 
 //--------End Task scheduler data structure----------------
 //--------Shared Variables---------------------------------
-// unsigned char const LENGTH_OF_LCD = 16;
+
+// user input
 unsigned char button1 = 0x00;
 unsigned char button2 = 0x00;
 unsigned char button3 = 0x00;
@@ -43,13 +44,16 @@ unsigned char LED_spin_knob = 0x00;
 unsigned char LED_buttons = 0x00;
 unsigned char light_sensor = 0x00; //TODO: possibly remove
 unsigned char keypad_value = 0x00;
-unsigned char const DEVICE_LCD = 0x00;
-unsigned char const DEVICE_SEVENSEG = 0x80;
+
+//game information
+unsigned char game_state = 0x00;
+unsigned char game_selection = 0x00;
+unsigned char game_counter = 0x00;
+unsigned char game_score = 0x00;
+
 //--------End Shared Variables-----------------------------
 
 void sendMessage(unsigned char device, unsigned char message) {
-	//device seven seg = 0x80
-	//device lcd = 0x00
 	if (USART_IsSendReady(0)) {
 		USART_Send(device | message, 0);
 	}
@@ -159,55 +163,162 @@ int SMTick3(int state) {
 	switch(state) {
 		case SM3_start: 	
 			LED_spin_knob = 0x00;
-			LED_buttons = 0x00;			
+			LED_buttons = 0x00;	
+					
 			if (button1) {
 				LED_buttons = 0x08; //all blue
-				sendMessage(DEVICE_SEVENSEG, 0x01);
 			} else if (button2) {
 				LED_buttons = 0x02; //all green
-				sendMessage(DEVICE_SEVENSEG, 0x02);
 			} else if (button3) {
 				LED_buttons = 0x09; //purple (red + blue)
-				sendMessage(DEVICE_SEVENSEG, 0x03);
 			} else if (button4) {
-				LED_buttons = 0x0B; //silver? (red + blue + green)
-				sendMessage(DEVICE_SEVENSEG, 0x04);
+				LED_buttons = 0x0B; //silver (red + blue + green)
 			} else if (button5) {
 				LED_buttons = 0x01; //all red
-				sendMessage(DEVICE_SEVENSEG, 0x05);
 			} else if (spin_knob) {
 				LED_spin_knob = 0x01;
-				sendMessage(DEVICE_SEVENSEG, 0x06);
-			} else if (light_sensor) {
-				sendMessage(DEVICE_SEVENSEG, 0x07);
 			} else if (keypad_value != 0x0B) {
 				if (keypad_value == 0x0A) { //error key (something other than 0-9)
-					sendMessage(DEVICE_SEVENSEG, 0x0A);
+					//TODO: change A to F for fail!
+					sendMessage(CODE_DEVICE_SEVENSEG, 0x0A);
 				} else {
 					if (keypad_value == 0x00) {
-						sendMessage(DEVICE_SEVENSEG, 0x00);
+						sendMessage(CODE_DEVICE_SEVENSEG, 0x00);
 					} else if (keypad_value == 0x01) {
-						sendMessage(DEVICE_SEVENSEG, 0x01);
+						sendMessage(CODE_DEVICE_SEVENSEG, 0x01);
 					} else if (keypad_value == 0x02) {
-						sendMessage(DEVICE_SEVENSEG, 0x02);
+						sendMessage(CODE_DEVICE_SEVENSEG, 0x02);
 					} else if (keypad_value == 0x03) {
-						sendMessage(DEVICE_SEVENSEG, 0x03);
+						sendMessage(CODE_DEVICE_SEVENSEG, 0x03);
 					} else if (keypad_value == 0x04) {
-						sendMessage(DEVICE_SEVENSEG, 0x04);
+						sendMessage(CODE_DEVICE_SEVENSEG, 0x04);
 					} else if (keypad_value == 0x05) {
-						sendMessage(DEVICE_SEVENSEG, 0x05);
+						sendMessage(CODE_DEVICE_SEVENSEG, 0x05);
 					} else if (keypad_value == 0x06) {
-						sendMessage(DEVICE_SEVENSEG, 0x06);
+						sendMessage(CODE_DEVICE_SEVENSEG, 0x06);
 					} else if (keypad_value == 0x07) {
-						sendMessage(DEVICE_SEVENSEG, 0x07);
+						sendMessage(CODE_DEVICE_SEVENSEG, 0x07);
 					} else if (keypad_value == 0x08) {
-						sendMessage(DEVICE_SEVENSEG, 0x08);
+						sendMessage(CODE_DEVICE_SEVENSEG, 0x08);
 					} else if (keypad_value == 0x09) {
-						sendMessage(DEVICE_SEVENSEG, 0x09);
+						sendMessage(CODE_DEVICE_SEVENSEG, 0x09);
 					} 				
 				}
-			} 
+			} 			
+			//set lights (if on)
 			PORTD = (LED_spin_knob << 3) | (LED_buttons << 4);
+		
+			break;
+		default: break;
+	}
+	return state;
+}
+
+// update game counter
+enum SM4_States { SM4_start };
+int SMTick4(int state) {
+	//State machine transitions
+	switch (state) {
+		case SM4_start:
+			state = SM4_start;
+			break;
+		default:
+			state = SM4_start;
+			break;
+	}
+	//State machine actions
+	switch(state) {
+		case SM4_start: 	
+			if (game_counter > 0) {
+				game_counter = game_counter - 1;
+				//set display to DP if not applicable
+				/*if (game_counter != 0)
+					sendMessage(CODE_DEVICE_SEVENSEG, game_counter);
+				else 
+					sendMessage(CODE_DEVICE_SEVENSEG, 0x0B); //set to DP
+					*/
+			}
+			break;
+		default: break;
+	}
+	return state;
+}
+
+// game play
+enum SM5_States { SM5_start };
+int SMTick5(int state) {
+	//State machine transitions
+	switch (state) {
+		case SM5_start:
+			state = SM5_start;
+			break;
+		default:
+			state = SM5_start;
+			break;
+	}
+	//State machine actions
+	switch(state) {
+		case SM5_start: 		
+			//game play
+			if (game_state == CODE_IN_GAME_PLAY) {
+				
+				if (game_selection == CODE_NOTHING) { //choice game piece
+					//decide 1 through 5
+					//TODO: add in keypad and spin knob
+					game_selection = rand() % 5 + 1;
+					game_counter = 0x09;
+				
+				} else if (game_counter > 0) { //    if answer has been chosen
+					if (button1) {
+						game_state = (game_selection == CODE_BUTTON1) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+						game_counter = 0x09;
+						game_selection = CODE_NOTHING;
+					} else if (button2) {
+						game_state = (game_selection == CODE_BUTTON2) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+						game_counter = 0x09;
+						game_selection = CODE_NOTHING;
+					} else if (button3) { 
+						game_state = (game_selection == CODE_BUTTON3) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+						game_counter = 0x09;
+						game_selection = CODE_NOTHING;
+					} else if (button4) {
+						game_state = (game_selection == CODE_BUTTON4) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+						game_counter = 0x09;
+						game_selection = CODE_NOTHING;
+					} else if (button5) {
+						game_state = (game_selection == CODE_BUTTON5) ? CODE_DISPLAY_CORRECT : CODE_DISPLAY_INCORRECT;
+						game_counter = 0x09;
+						game_selection = CODE_NOTHING;
+					}		
+					
+				} else { //time ran out
+					game_state = CODE_DISPLAY_INCORRECT;
+					game_selection = CODE_NOTHING;
+				}
+			} else if (game_state == CODE_DISPLAY_WELCOME || game_state == CODE_DISPLAY_INCORRECT) {
+				game_selection = CODE_NOTHING;
+				if (button2) { //green button
+					game_state = CODE_DISPLAY_GAME_STARTING;
+					game_counter = 0x09;
+					
+					//send message first time but rest is taken care of state machine 4
+					// sendMessage(CODE_DEVICE_SEVENSEG, game_counter);
+				}
+			} else if (game_state == CODE_DISPLAY_GAME_STARTING || game_state == CODE_DISPLAY_CORRECT) {
+				game_selection = CODE_NOTHING;
+				if (game_counter == 0) {
+					game_state = CODE_IN_GAME_PLAY;
+				}
+			} 
+			
+			//send message
+			if (game_state == CODE_IN_GAME_PLAY) {
+				sendMessage(CODE_DEVICE_GAME_PIECE, game_selection);
+			} else {
+				sendMessage(CODE_DEVICE_LCD, game_state);
+			}
+			
+			
 			break;
 		default: break;
 	}
@@ -224,12 +335,16 @@ int main() {
 	// Period for the tasks
 	unsigned long int SMTick1_calc = 1;
 	unsigned long int SMTick2_calc = 5;
-	unsigned long int SMTick3_calc = 10;
+	unsigned long int SMTick3_calc = 100;
+	unsigned long int SMTick4_calc = 1000;
+	unsigned long int SMTick5_calc = 5;
 	
 	//Calculating GCD
 	unsigned long int tmpGCD = 1;
 	tmpGCD = findGCD(SMTick1_calc, SMTick2_calc);
 	tmpGCD = findGCD(tmpGCD, SMTick3_calc);
+	tmpGCD = findGCD(tmpGCD, SMTick4_calc);
+	tmpGCD = findGCD(tmpGCD, SMTick5_calc);
 	
 	//Greatest common divisor for all tasks
 	// or smallest time unit for tasks.
@@ -239,10 +354,12 @@ int main() {
 	unsigned long int SMTick1_period = SMTick1_calc/GCD;
 	unsigned long int SMTick2_period = SMTick2_calc/GCD;
 	unsigned long int SMTick3_period = SMTick3_calc/GCD;
+	unsigned long int SMTick4_period = SMTick4_calc/GCD;
+	unsigned long int SMTick5_period = SMTick5_calc/GCD;
 
 	//Declare an array of tasks
-	static task task1, task2, task3;
-	task *tasks[] = { &task1, &task2, &task3 };
+	static task task1, task2, task3, task4, task5;
+	task *tasks[] = { &task1, &task2, &task3, &task4, &task5 };
 	const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
 	// Task 1
 	task1.state = -1;
@@ -259,12 +376,27 @@ int main() {
 	task3.period = SMTick3_period;
 	task3.elapsedTime = SMTick3_period;
 	task3.TickFct = &SMTick3;
+	// Task 4
+	task4.state = -1;
+	task4.period = SMTick4_period;
+	task4.elapsedTime = SMTick4_period;
+	task4.TickFct = &SMTick4;
+	// Task 5
+	task5.state = -1;
+	task5.period = SMTick5_period;
+	task5.elapsedTime = SMTick5_period;
+	task5.TickFct = &SMTick5;
 	// Set the timer and turn it on
 	TimerSet(GCD);
 	TimerOn();
 	
+	//set USART
 	initUSART(0);
 	USART_Flush(0);
+	
+	//set game state
+	game_state = CODE_DISPLAY_WELCOME;
+	
 	
 	// Scheduler for-loop iterator
 	unsigned short i;
