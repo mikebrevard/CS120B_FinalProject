@@ -51,6 +51,9 @@ unsigned char game_selection = 0x00;
 unsigned char game_counter = 0x00;
 unsigned char game_score = 0x00;
 
+//sound information
+unsigned char sound_counter = 0x00;
+
 //--------End Shared Variables-----------------------------
 
 void sendMessage(unsigned char device, unsigned char message) {
@@ -164,9 +167,8 @@ int SMTick3(int state) {
 		case SM3_start: 	
 			LED_spin_knob = 0x00;
 			LED_buttons = 0x00;	
-					
 			if (button1) {
-				LED_buttons = 0x08; //all blue
+				LED_buttons = 0x08; //all blue	
 			} else if (button2) {
 				LED_buttons = 0x02; //all green 0x02
 			} else if (button3) {
@@ -204,7 +206,9 @@ int SMTick3(int state) {
 						sendMessage(CODE_DEVICE_SEVENSEG, 0x09);
 					} 				
 				}
-			} 			
+			} else {
+				sendMessage(CODE_DEVICE_SEVENSEG, 0x0B);
+			}		
 			//set lights (if on)
 			PORTD = (LED_spin_knob << 3) | (LED_buttons << 4);
 		
@@ -348,10 +352,38 @@ int SMTick5(int state) {
 	return state;
 }
 
+// sound
+enum SM6_States { SM6_start };
+int SMTick6(int state) {
+	//State machine transitions
+	switch (state) {
+		case SM6_start:
+			state = SM6_start;
+			break;
+		default:
+			state = SM5_start;
+			break;
+	}
+	//State machine actions
+	switch(state) {
+		case SM6_start: 					
+			if (sound_counter == 0 || game_state == CODE_DISPLAY_WELCOME || game_state == CODE_DISPLAY_INCORRECT) {
+				set_PWM(0.0);
+				sound_counter =  (9 - (game_score / 3) > 0) ? 9 - (game_score / 3) : 1;
+			} else {
+				set_PWM(300.0);	
+				sound_counter = sound_counter - 1;
+			}
+			break;
+		default: break;
+	}
+	return state;
+}
+
 // Implement scheduler code from PES.
 int main() {
 	DDRA = 0xFF; PORTA = 0x00;
-	DDRB = 0x00; PORTB = 0xFF;
+	DDRB = 0xE0; PORTB = 0x1F;
 	DDRC = 0xF0; PORTC = 0x0F;
 	DDRD = 0xFF; PORTD = 0x00; 
 	
@@ -361,6 +393,7 @@ int main() {
 	unsigned long int SMTick3_calc = 100;
 	unsigned long int SMTick4_calc = 1000;
 	unsigned long int SMTick5_calc = 5;
+	unsigned long int SMTick6_calc = 100;
 	
 	//Calculating GCD
 	unsigned long int tmpGCD = 1;
@@ -368,6 +401,7 @@ int main() {
 	tmpGCD = findGCD(tmpGCD, SMTick3_calc);
 	tmpGCD = findGCD(tmpGCD, SMTick4_calc);
 	tmpGCD = findGCD(tmpGCD, SMTick5_calc);
+	tmpGCD = findGCD(tmpGCD, SMTick6_calc);
 	
 	//Greatest common divisor for all tasks
 	// or smallest time unit for tasks.
@@ -379,10 +413,11 @@ int main() {
 	unsigned long int SMTick3_period = SMTick3_calc/GCD;
 	unsigned long int SMTick4_period = SMTick4_calc/GCD;
 	unsigned long int SMTick5_period = SMTick5_calc/GCD;
+	unsigned long int SMTick6_period = SMTick6_calc/GCD;
 
 	//Declare an array of tasks
-	static task task1, task2, task3, task4, task5;
-	task *tasks[] = { &task1, &task2, &task3, &task4, &task5 };
+	static task task1, task2, task3, task4, task5, task6;
+	task *tasks[] = { &task1, &task2, &task3, &task4, &task5, &task6 };
 	const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
 	// Task 1
 	task1.state = -1;
@@ -409,6 +444,11 @@ int main() {
 	task5.period = SMTick5_period;
 	task5.elapsedTime = SMTick5_period;
 	task5.TickFct = &SMTick5;
+	// Task 6
+	task6.state = -1;
+	task6.period = SMTick6_period;
+	task6.elapsedTime = SMTick6_period;
+	task6.TickFct = &SMTick6;
 	// Set the timer and turn it on
 	TimerSet(GCD);
 	TimerOn();
@@ -416,6 +456,9 @@ int main() {
 	//set USART
 	initUSART(0);
 	USART_Flush(0);
+	
+	//for piezo buzzer
+	PWM_on();//(always on)
 	
 	//set game state
 	game_state = CODE_DISPLAY_WELCOME;
